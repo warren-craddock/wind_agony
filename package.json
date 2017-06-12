@@ -48,7 +48,8 @@
     "superagent": "*",
     "url-loader": "*",
     "webpack": "*",
-    "webpack-dev-middleware": "*"
+    "webpack-dev-middleware": "*",
+    "xml2js": "*"
   },
   "scripts": {
     "build": "webpack --config web/webpack.config.js --progress --colors --display-error-details",

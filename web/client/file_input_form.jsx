@@ -1,20 +1,21 @@
 import React from 'react';
 
-import { ReadSingleFile } from 'web/client/data_provider.js';
+import { ReadTcxFile } from 'web/client/data_provider.js';
 
 class FileInputForm extends React.Component {
   handleChange = (evt) => {
-    ReadSingleFile(evt, (contents) => {
-      console.log(contents);
-    })
+    // Read the TCX file, and fire an action with the resulting JavaScript
+    // object.
+    ReadTcxFile(evt, (err, obj) => {
+      if (!err)
+        this.props.dispatch({type: 'SET_TCX_FILE', payload: obj});
+    });
   }
 
   render = () => {
     return (
       <div>
         <input type="file" id="file-input" onChange={this.handleChange}/>
-        <h3>Contents of the file:</h3>
-        <pre id="file-content"></pre>
       </div>
     );
   }
