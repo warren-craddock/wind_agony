@@ -34,7 +34,6 @@
     "mocha": "*",
     "mocha-loader": "*",
     "morgan": "*",
-    "onsenui": "*",
     "react": "*",
     "react-dom": "*",
     "react-onsenui": "*",
