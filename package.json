@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "async": "*",
     "babel-cli": "*",
     "babel-core": "*",
     "babel-eslint": "*",
@@ -46,6 +47,7 @@
     "source-map-support": "*",
     "style-loader": "*",
     "superagent": "*",
+    "tinycolor2": "*",
     "url-loader": "*",
     "webpack": "*",
     "webpack-dev-middleware": "*",
