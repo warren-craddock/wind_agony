@@ -13,10 +13,15 @@ class WindAgonyMap extends React.Component {
     // toplevel Redux store.
     const trackpoints = GetTrackpointsFromTcx(this.props.tcx);
 
-    const track_aspect_ratio = this.props.bounding_box.lon_range /
-                               this.props.bounding_box.lat_range;
-    const svg_height = 0.75 * window.innerHeight;
-    const svg_width = track_aspect_ratio * svg_height;
+    // Compute a size for the SVG drawing that fits on one screen.
+    // const track_aspect_ratio = this.props.bounding_box.lon_range /
+    //                            this.props.bounding_box.lat_range;
+    // let svg_height = 0.75 * window.innerHeight;
+    // let svg_width = track_aspect_ratio * svg_height;
+    // if (svg_width > window.innerWidth) {
+    //   svg_width = 0.75 * window.innerWidth;
+    //   svg_height = svg_width / track_aspect_ratio;
+    // }
 
     // Compute the viewBox of the SVG document from the track's bounding box.
     const view_box = [
@@ -32,11 +37,9 @@ class WindAgonyMap extends React.Component {
     // only supports tracks in the northern hemisphere.
     return (
       <svg
-        width={svg_width}
-        height={svg_height}
         viewBox={view_box}
         transform="scale(1, -1)"
-        style={{margin: "20px"}}>
+        style={{margin: "20px", maxHeight: window.innerHeight * 0.65}}>
         <TcxCourse
           trackpoints={trackpoints} />
         <WindVectorField
