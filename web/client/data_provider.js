@@ -28,6 +28,18 @@ function GetTrackpointsFromTcx(tcx) {
   return trackpoints.filter(tp => tp.Position !== undefined);
 }
 
+function GetDateTimeFromTcx(tcx) {
+  let date_time =
+    tcx.TrainingCenterDatabase.Activities[0].Activity[0].Lap[0].$.StartTime;
+
+  // The Dark Sky API doesn't like milliseconds.
+  if (date_time.endsWith(".000Z")) {
+    date_time = date_time.replace(".000Z", "Z");
+  }
+
+  return date_time;
+}
+
 function ComputeBoundingBox(tcx) {
   // Extract the list of trackpoints from the TCX object.
   const trackpoints = GetTrackpointsFromTcx(tcx);
@@ -74,7 +86,7 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
       const lon = bounding_box.min_lon
                 + lon_i * (bounding_box.lon_range / points);
 
-      grid_points.push([index, lat, lon]);
+      grid_points.push([index, lat, lon, date_time]);
 
       index += 1;
     }
@@ -83,11 +95,12 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
   // Helper method; asynchronously gets data for a specific lat/lon from the
   // Dark Sky API.
   const DarkSkyApiRequest = (args, callback) => {
-    let [index, lat, lon] = args;
-    console.log('Dark sky API request for index', index, 'lat', lat, 'lon', lon);
+    let [index, lat, lon, date_time] = args;
+    console.log('Dark sky API request for index',
+      index, 'lat', lat, 'lon', lon, 'date_time', date_time);
 
     // TODO(wcraddock): Stop using this CORS hack.
-    const url = `https://crossorigin.me/https://api.darksky.net/forecast/${DARK_SKY_API_KEY}/${lat},${lon}`;
+    const url = `https://crossorigin.me/https://api.darksky.net/forecast/${DARK_SKY_API_KEY}/${lat},${lon},${date_time}`;
     request
        .get(url)
        .end(function(err, res){
@@ -135,5 +148,6 @@ export {
   ReadTcxFile,
   ComputeBoundingBox,
   GetTrackpointsFromTcx,
+  GetDateTimeFromTcx,
   GetDarkSkyWindVectorField
 };

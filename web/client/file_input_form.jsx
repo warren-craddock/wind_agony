@@ -1,6 +1,11 @@
 import React from 'react';
 
-import { ReadTcxFile, ComputeBoundingBox, GetDarkSkyWindVectorField } from 'web/client/data_provider.js';
+import {
+  ReadTcxFile,
+  ComputeBoundingBox,
+  GetDateTimeFromTcx,
+  GetDarkSkyWindVectorField
+} from 'web/client/data_provider.js';
 
 class FileInputForm extends React.Component {
   handleChange = (evt) => {
@@ -20,9 +25,10 @@ class FileInputForm extends React.Component {
       // Asynchronously get wind data from Dark Sky, then fire an action with
       // the resulting vector field.
       // FIXME move kNumPoints upwards somewhere.
-      console.log('Calling GetDarkSkyWindVectorField');
       const kNumPoints = 10;
-      GetDarkSkyWindVectorField(null, this.props.bounding_box, kNumPoints,
+      const date_time = GetDateTimeFromTcx(tcx);
+      console.log('Getting wind data for date_time', date_time);
+      GetDarkSkyWindVectorField(date_time, this.props.bounding_box, kNumPoints,
         image_data => this.props.dispatch(
           {type: 'SET_WIND_VECTOR_FIELD', payload: image_data}));
     });
