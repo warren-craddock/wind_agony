@@ -30,9 +30,9 @@ class App extends React.Component {
   }
 };
 
-// Now we create a new "higher-order" React component, based on SocketIoApp,
-// that is connected to the Redux store. Whenever the Redux store changes, our
-// new ReduxApp will be re-rendered.
+// Now we create a new "higher-order" React component that is connected to the
+// Redux store. Whenever the Redux store changes, our new ReduxApp will be re-
+// rendered.
 let ReduxApp = connect(mapStateToProps)(App);
 
 // Finally, we have to wrap our App with a <Provider> component, which

@@ -20,10 +20,17 @@ function ReadTcxFile(evt, callback) {
   reader.readAsText(file);
 }
 
+function GetTrackpointsFromTcx(tcx) {
+  const trackpoints =
+    tcx.TrainingCenterDatabase.Activities[0].Activity[0].Lap[0].Track[0].Trackpoint;
+
+  // Filter out any trackpoints that don't have lat/lon.
+  return trackpoints.filter(tp => tp.Position !== undefined);
+}
+
 function ComputeBoundingBox(tcx) {
   // Extract the list of trackpoints from the TCX object.
-  const trackpoints =
-    tcx.TrainingCenterDatabase.Courses[0].Course[0].Track[0].Trackpoint;
+  const trackpoints = GetTrackpointsFromTcx(tcx);
 
   // Reduce the trackpoints to compute their bounding box.
   const initial_value = {min_lon: Infinity, max_lon: -Infinity,
@@ -124,4 +131,9 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
   });
 }
 
-export { ReadTcxFile, ComputeBoundingBox, GetDarkSkyWindVectorField };
+export {
+  ReadTcxFile,
+  ComputeBoundingBox,
+  GetTrackpointsFromTcx,
+  GetDarkSkyWindVectorField
+};

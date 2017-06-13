@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { GetTrackpointsFromTcx } from 'web/client/data_provider.js';
 import { TcxCourse } from 'web/client/tcx_course.jsx';
 import { WindVectorField } from 'web/client/wind_vector_field.jsx';
 
@@ -10,8 +11,7 @@ class WindAgonyMap extends React.Component {
 
     // Extract the list of trackpoints from the TCX object stored in the
     // toplevel Redux store.
-    const trackpoints =
-      this.props.tcx.TrainingCenterDatabase.Courses[0].Course[0].Track[0].Trackpoint;
+    const trackpoints = GetTrackpointsFromTcx(this.props.tcx);
 
     const track_aspect_ratio = this.props.bounding_box.lon_range /
                                this.props.bounding_box.lat_range;

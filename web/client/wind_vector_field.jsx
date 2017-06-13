@@ -36,7 +36,7 @@ class WindVectorField extends React.Component {
     // Create an offscreen canvas and fill it with the wind data.
     // FIXME make a parent component that computes bounding box and passes along
     // SVG heights and so on.
-    const kNumPoints = 5;
+    const kNumPoints = 10;
     let canvas = document.createElement('canvas');
     canvas.width = kNumPoints;
     canvas.height = kNumPoints;

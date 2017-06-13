@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { GetTrackpointsFromTcx } from 'web/client/data_provider.js';
 import { LineIntegral } from 'web/client/calculus.js';
 
 class WindAgonyScore extends React.Component {
@@ -12,8 +13,7 @@ class WindAgonyScore extends React.Component {
 
     // Extract the list of trackpoints from the TCX object stored in the
     // toplevel Redux store.
-    const trackpoints =
-      this.props.tcx.TrainingCenterDatabase.Courses[0].Course[0].Track[0].Trackpoint;
+    const trackpoints = GetTrackpointsFromTcx(this.props.tcx);
 
     // Extract simple pairs of (lon, lat) from each trackpoint.
     const curve = trackpoints.map(obj => ({
