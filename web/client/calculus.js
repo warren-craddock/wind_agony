@@ -8,8 +8,6 @@
 // |vector_field| is given as an HTML5 ImageData object that is assumed to fit
 // the same bounding box.
 function Bilerp(point, bounding_box, vector_field) {
-  const kNumChannels = 4;
-
   // Here's a plot of the simplest case. |Q| represents the given pixel data.
   // The bounding box is [-10, 10] for both latitude and longitude. That means
   // the pitch (width) of each pixel is 10 degrees in each axis.
@@ -55,42 +53,44 @@ function Bilerp(point, bounding_box, vector_field) {
   const lat2_index = lat1_index + 1;
   const lat2 = (lat2_index - 0.5) * lat_pixel_pitch;
 
-  // If the point is out of bounds, return the closest pixel.
+  // If the point is out of bounds, return zero speed.
+  // TODO(wcraddock:) This introduces a small error at the edge of the map.
+  // Might be worth fixing.
   const lon_oob = lon1_index < 0 || lon2_index >= vector_field.width;
   const lat_oob = lat1_index < 0 || lat2_index >= vector_field.height;
   if (lon_oob || lat_oob) {
-    // TODO(wcraddock): return correct value here.
-    return new Array(4, 0);
+    return {bearing: 0, speed:0};
   }
 
   // Extract the data for each surrounding pixel.
-  const slice_fn = (lon, lat) => {
-    const index = kNumChannels * (vector_field.width * lat + lon);
-    return vector_field.data.slice(index, index + kNumChannels);
+  const select_fn = (lon, lat) => {
+    const index = vector_field.width * lat + lon;
+    return vector_field[index];
   }
-  const Q11 = slice_fn(lon1_index, lat1_index);
-  const Q12 = slice_fn(lon1_index, lat2_index);
-  const Q21 = slice_fn(lon2_index, lat1_index);
-  const Q22 = slice_fn(lon2_index, lat2_index);
+  const Q11 = select_fn(lon1_index, lat1_index);
+  const Q12 = select_fn(lon1_index, lat2_index);
+  const Q21 = select_fn(lon2_index, lat1_index);
+  const Q22 = select_fn(lon2_index, lat2_index);
 
   // Interpolate along the lon direction.
-  let R1 = new Array(kNumChannels);
-  for (let i = 0; i < kNumChannels; i += 1) {
-    R1[i] = ((lon2 - point.lon) / lon_pixel_pitch) * Q11[i]
-          + ((point.lon - lon1) / lon_pixel_pitch) * Q21[i];
-  }
-  let R2 = new Array(kNumChannels);
-  for (let i = 0; i < kNumChannels; i += 1) {
-    R2[i] = ((lon2 - point.lon) / lon_pixel_pitch) * Q12[i]
-          + ((point.lon - lon1) / lon_pixel_pitch) * Q22[i];
-  }
+  let R1 = {};
+  R1.bearing = ((lon2 - point.lon) / lon_pixel_pitch) * Q11.bearing
+             + ((point.lon - lon1) / lon_pixel_pitch) * Q21.bearing;
+  R1.speed = ((lon2 - point.lon) / lon_pixel_pitch) * Q11.speed
+           + ((point.lon - lon1) / lon_pixel_pitch) * Q21.speed;
+
+  let R2 = {};
+  R2.bearing = ((lon2 - point.lon) / lon_pixel_pitch) * Q12.bearing
+             + ((point.lon - lon1) / lon_pixel_pitch) * Q22.bearing;
+  R2.speed = ((lon2 - point.lon) / lon_pixel_pitch) * Q12.speed
+           + ((point.lon - lon1) / lon_pixel_pitch) * Q22.speed;
 
   // Interpolate along the lat direction.
-  let P = new Array(kNumChannels);
-  for (let i = 0; i < kNumChannels; i += 1) {
-    P[i] = ((lat2 - point.lat) / lat_pixel_pitch) * R1[i]
-         + ((point.lat - lat1) / lat_pixel_pitch) * R2[i];
-  }
+  let P = {};
+  P.bearing = ((lat2 - point.lat) / lat_pixel_pitch) * R1.bearing
+            + ((point.lat - lat1) / lat_pixel_pitch) * R2.bearing;
+  P.speed = ((lat2 - point.lat) / lat_pixel_pitch) * R1.speed
+          + ((point.lat - lat1) / lat_pixel_pitch) * R2.speed;
 
   return P;
 }
@@ -127,15 +127,13 @@ function LineIntegral(curve, bounding_box, vector_field) {
 
     // Interpolate the wind speed and heading at the point.
     const wind_info = Bilerp(curve[i], bounding_box, vector_field);
-    const kWindHeadingScale = (360.0 / 255.0);
-    const wind_heading = wind_info[0] * kWindHeadingScale;
-    const kWindSpeedScale = (50.0 / 255.0);
-    const wind_speed = wind_info[1] * kWindSpeedScale;
 
-    // Convert the wind speed and heading into lat/lon.
+    // Convert the wind speed and heading into lat/lon. Remember that wind
+    // bearing is reported as the direction the wind originates. If one rides
+    // with a tailwind, the dot product with be -1.
     const wind_vector = {
-      lon: wind_speed * Math.cos(wind_heading * Math.PI / 180.0),
-      lat: wind_speed * Math.sin(wind_heading * Math.PI / 180.0)
+      lon: wind_info.speed * Math.sin(wind_info.bearing * Math.PI / 180.0),
+      lat: wind_info.speed * Math.cos(wind_info.bearing * Math.PI / 180.0)
     }
 
     // Compute the dot product of the wind and motion vectors.

@@ -10,27 +10,28 @@ class WindVectorField extends React.Component {
     }
 
     // The wind data is an odd packed format, with the red channel containing
-    // the heading, and the green channel containing the speed. For
-    // visualization, treat the wind data as HSL colors, where heading is hue
+    // the bearing, and the green channel containing the speed. For
+    // visualization, treat the wind data as HSL colors, where bearing is hue
     // and speed is saturation. Convert these colors into RGB for display.
     let rgb_image_data =
       new ImageData(this.props.wind.width, this.props.wind.height);
-    for (let i = 0; i < this.props.wind.data.length; i += 4) {
+    for (let i = 0; i < this.props.wind.length; i += 1) {
       // Intepret the wind data point as an HSL color.
-      const heading = this.props.wind.data[i + 0];
-      const speed = this.props.wind.data[i + 1];
+      // debugger;
+      const kWindHeadingScale = 255.0 / 360.0;
+      const kWindSpeedScale = 255.0 / 50.0;  // 50 mph is max displayed speed
       const hsl_color = tinycolor({
-        h: heading,
-        s: speed,
+        h: this.props.wind[i].bearing * kWindHeadingScale,
+        s: this.props.wind[i].speed * kWindSpeedScale,
         l: 0.5
       });
 
       // Convert the HSL color into RGB and fill in the output image pixel.
       const rgb_color = hsl_color.toRgb();
-      rgb_image_data.data[i + 0] = rgb_color.r;
-      rgb_image_data.data[i + 1] = rgb_color.g;
-      rgb_image_data.data[i + 2] = rgb_color.b;
-      rgb_image_data.data[i + 3] = 128;  // alpha 0.5
+      rgb_image_data.data[i * 4 + 0] = rgb_color.r;
+      rgb_image_data.data[i * 4 + 1] = rgb_color.g;
+      rgb_image_data.data[i * 4 + 2] = rgb_color.b;
+      rgb_image_data.data[i * 4 + 3] = 128;  // alpha 0.5
     }
 
     // Create an offscreen canvas and fill it with the wind data.

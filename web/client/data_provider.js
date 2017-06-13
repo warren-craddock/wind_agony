@@ -63,12 +63,13 @@ function ComputeBoundingBox(tcx) {
   return bounding_box;
 }
 
-// |date_time| is represented as FIXME
+// |date_time| is represented as an ISO string, like
+// [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone]
 //
 // |bounding_box| should be an array of [min_lon, max_lon, min_lat, max_lat].
 //
-// The wind vector field is sampled on grid of points x points, and returned as
-// an image object. The HSV value of each pixel encodes the wind speed and
+// The wind vector field is sampled on grid of |points| x |points|, and returned
+// as an image object. The HSV value of each pixel encodes the wind speed and
 // heading. Hue (0-255) represents wind heading, while value (0-255) represents
 // speed (FIXME scale). Saturation is always 255.
 //
@@ -80,7 +81,7 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
   let grid_points = [];
   for (let lat_i = 0; lat_i < points; lat_i += 1) {
     for (let lon_i = 0; lon_i < points; lon_i += 1) {
-      // FIXME compute pixel centers.
+      // FIXME compute pixel centers for greater accuracy.
       const lat = bounding_box.min_lat
                 + lat_i * (bounding_box.lat_range / points);
       const lon = bounding_box.min_lon
@@ -100,7 +101,7 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
       index, 'lat', lat, 'lon', lon, 'date_time', date_time);
 
     // TODO(wcraddock): Stop using this CORS hack.
-    const url = `https://crossorigin.me/https://api.darksky.net/forecast/${DARK_SKY_API_KEY}/${lat},${lon},${date_time}`;
+    const url = `https://cors-anywhere.herokuapp.com/https://api.darksky.net/forecast/${DARK_SKY_API_KEY}/${lat},${lon},${date_time}`;
     request
        .get(url)
        .end(function(err, res){
@@ -115,32 +116,17 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
       console.log('Error getting data from Dark Sky API', err);
     }
 
-    // Create an offscreen canvas that will contain the output image.
-    let canvas = document.createElement('canvas');
-    let context = canvas.getContext('2d');
-    let image_data = context.createImageData(points, points);
+    // Transform all of the result objects by pulling out the wind bearing
+    // and speed fields.
+    const wind_data = results.map(result => ({
+      bearing: result.daily.data[0].windBearing,
+      speed: result.daily.data[0].windSpeed
+    }));
+    wind_data.width = points;
+    wind_data.height = points;
 
-    // Copy the wind heading and speed information into the output image.
-    for (let i = 0; i < grid_points.length; i += 1) {
-      const index = grid_points[i][0];
-      const bearing = results[i].daily.data[0].windBearing;
-      const speed = results[i].daily.data[0].windSpeed;
-      console.log('index', index, 'bearing', bearing, 'speed', speed);
-
-      // Fill in the image pixel with the wind information. Pack the wind
-      // bearing [0-360) degrees into the range [0-256) in the red channel. Pack the
-      // wind speed [0-50) mph into the green channel. This is a bit of a hack,
-      // but I want to preserve more precision in the speed.
-      const kWindHeadingScale = (255.0 / 360.0);
-      const kWindSpeedScale = (255.0 / 50.0);
-      image_data.data[index * 4 + 0] = bearing * kWindHeadingScale;
-      image_data.data[index * 4 + 1] = Math.max(255, speed * kWindSpeedScale);
-      image_data.data[index * 4 + 2] = 0;
-      image_data.data[index * 4 + 3] = 128;
-    }
-
-    console.log('image_data', image_data);
-    callback(image_data);
+    // Call our callback with the complete dataset.
+    callback(wind_data);
   });
 }
 
