@@ -40,8 +40,8 @@ class WindAgonyMap extends React.Component {
         <TcxCourse
           trackpoints={trackpoints} />
         <WindVectorField
-          wind={this.props.wind || null}
-          bounding_box={this.props.bounding_box} />
+          bounding_box={this.props.bounding_box}
+          wind={this.props.wind || null} />
       </svg>
     );
   }

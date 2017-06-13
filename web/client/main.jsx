@@ -5,6 +5,7 @@ import { connect, Provider } from 'react-redux';
 
 import { FileInputForm } from 'web/client/file_input_form.jsx';
 import { WindAgonyMap } from 'web/client/wind_agony_map.jsx';
+import { WindAgonyScore } from 'web/client/wind_agony_score.jsx';
 
 import { store } from 'store.js';
 
@@ -20,9 +21,10 @@ function mapStateToProps(state) {
 class App extends React.Component {
   render = () => {
     return (
-      <div>
+      <div style={{textAlign: "center"}}>
         <FileInputForm {...this.props} />
         <WindAgonyMap {...this.props} />
+        <WindAgonyScore {...this.props} />
       </div>
     );
   }

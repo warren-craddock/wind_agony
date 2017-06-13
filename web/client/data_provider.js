@@ -1,7 +1,6 @@
 const async = require('async');
 const parseString = require('xml2js').parseString;
 const request = require('superagent');
-const tinycolor = require("tinycolor2");
 
 const DARK_SKY_API_KEY = "24490cda9c1db43d3e46237c0ecdd2ba";
 
@@ -108,22 +107,15 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
       const speed = results[i].daily.data[0].windSpeed;
       console.log('index', index, 'bearing', bearing, 'speed', speed);
 
-      // Convert the wind data into an HSL color.
-      // FIXME scale of speed
-      const hsl_color = tinycolor({
-        h: bearing * (255.0 / 360.0),
-        s: speed * (255.0 / 20.0),
-        l: 0.5
-      });
-
-      // Convert into RGB.
-      const rgb_color = hsl_color.toRgb();
-      console.log('index', index, 'hsl_color', hsl_color, 'rgb_color', rgb_color);
-
-      // Fill in the output image's pixel.
-      image_data.data[index * 4 + 0] = rgb_color.r;
-      image_data.data[index * 4 + 1] = rgb_color.g;
-      image_data.data[index * 4 + 2] = rgb_color.b;
+      // Fill in the image pixel with the wind information. Pack the wind
+      // bearing [0-360) degrees into the range [0-256) in the red channel. Pack the
+      // wind speed [0-50) mph into the green channel. This is a bit of a hack,
+      // but I want to preserve more precision in the speed.
+      const kWindHeadingScale = (255.0 / 360.0);
+      const kWindSpeedScale = (255.0 / 50.0);
+      image_data.data[index * 4 + 0] = bearing * kWindHeadingScale;
+      image_data.data[index * 4 + 1] = Math.max(255, speed * kWindSpeedScale);
+      image_data.data[index * 4 + 2] = 0;
       image_data.data[index * 4 + 3] = 128;
     }
 

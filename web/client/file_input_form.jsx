@@ -21,7 +21,7 @@ class FileInputForm extends React.Component {
       // the resulting vector field.
       // FIXME move kNumPoints upwards somewhere.
       console.log('Calling GetDarkSkyWindVectorField');
-      const kNumPoints = 3;
+      const kNumPoints = 5;
       GetDarkSkyWindVectorField(null, this.props.bounding_box, kNumPoints,
         image_data => this.props.dispatch(
           {type: 'SET_WIND_VECTOR_FIELD', payload: image_data}));
@@ -31,7 +31,11 @@ class FileInputForm extends React.Component {
   render = () => {
     return (
       <div>
-        <input type="file" id="file-input" onChange={this.handleChange}/>
+        <input
+          type="file"
+          id="file-input"
+          style={{margin: "10px"}}
+          onChange={this.handleChange}/>
       </div>
     );
   }

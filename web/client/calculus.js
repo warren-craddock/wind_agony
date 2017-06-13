@@ -114,7 +114,39 @@ function Bilerp(point, bounding_box, vector_field) {
 // small. This is usually true for a single day's bike riding, but it would be
 // more correct to compute this on the surface of a 2-sphere.
 function LineIntegral(curve, bounding_box, vector_field) {
+  let integral = 0.0;
 
+  // Iterate along the curve, including only the penultimate point.
+  for (let i = 0; i < curve.length - 1; i += 1) {
+    // Use the first difference as an approximation to the tangent vector
+    // along the curve.
+    const motion_vector = {
+      lon: curve[i + 1].lon - curve[i].lon,
+      lat: curve[i + 1].lat - curve[i].lat
+    };
+
+    // Interpolate the wind speed and heading at the point.
+    const wind_info = Bilerp(curve[i], bounding_box, vector_field);
+    const kWindHeadingScale = (360.0 / 255.0);
+    const wind_heading = wind_info[0] * kWindHeadingScale;
+    const kWindSpeedScale = (50.0 / 255.0);
+    const wind_speed = wind_info[1] * kWindSpeedScale;
+
+    // Convert the wind speed and heading into lat/lon.
+    const wind_vector = {
+      lon: wind_speed * Math.cos(wind_heading * Math.PI / 180.0),
+      lat: wind_speed * Math.sin(wind_heading * Math.PI / 180.0)
+    }
+
+    // Compute the dot product of the wind and motion vectors.
+    const dot_product = motion_vector.lon * wind_vector.lon
+                      + motion_vector.lat * wind_vector.lat;
+
+    // Accumulate the integral.
+    integral += dot_product;
+  }
+
+  return integral;
 }
 
 export { Bilerp, LineIntegral };
