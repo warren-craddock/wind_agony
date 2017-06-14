@@ -25,16 +25,24 @@ class WindAgonyMap extends React.Component {
     // field.
     // TODO(wcraddock): The transform here is a total hack. This simple demo
     // only supports tracks in the northern hemisphere.
+    const max_height = window.innerHeight * 0.65;
+    const scale_string = `scale(1, -1)`;
+    const translate_distance =
+      -1.0 * (this.props.bounding_box.min_lat + this.props.bounding_box.max_lat);
+    const translate_string = `translate(0, ${translate_distance})`
     return (
       <svg
         viewBox={view_box}
-        transform="scale(1, -1)"
-        style={{margin: "20px", maxHeight: window.innerHeight * 0.65}}>
-        <TcxCourse
-          trackpoints={trackpoints} />
-        <WindVectorField
-          bounding_box={this.props.bounding_box}
-          wind={this.props.wind || null} />
+        style={{margin: "20px", maxHeight: max_height}}>
+        <g transform={scale_string}>
+          <g transform={translate_string}>
+            <TcxCourse
+              trackpoints={trackpoints} />
+            <WindVectorField
+              bounding_box={this.props.bounding_box}
+              wind={this.props.wind || null} />
+          </g>
+        </g>
       </svg>
     );
   }
