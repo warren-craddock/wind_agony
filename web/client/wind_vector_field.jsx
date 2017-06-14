@@ -18,11 +18,10 @@ class WindVectorField extends React.Component {
     for (let i = 0; i < this.props.wind.length; i += 1) {
       // Intepret the wind data point as an HSL color.
       // debugger;
-      const kWindHeadingScale = 255.0 / 360.0;
-      const kWindSpeedScale = 255.0 / 50.0;  // 50 mph is max displayed speed
+      const kWindSpeedScale = 1.0 / 20.0;  // 20 mph is max displayed speed
       const hsl_color = tinycolor({
-        h: this.props.wind[i].bearing * kWindHeadingScale,
-        s: this.props.wind[i].speed * kWindSpeedScale,
+        h: this.props.wind[i].bearing,
+        s: Math.max(1.0, this.props.wind[i].speed * kWindSpeedScale),
         l: 0.5
       });
 
