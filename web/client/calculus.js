@@ -43,15 +43,15 @@ function Bilerp(point, bounding_box, vector_field) {
   // Find the four pixels of the vector field that surround the given point.
   const lon1_index = Math.floor(
     (point.lon - bounding_box.min_lon - lon_pixel_pitch / 2.0) / lon_pixel_pitch);
-  const lon1 = (lon1_index - 0.5) * lon_pixel_pitch;
+  const lon1 = bounding_box.min_lon + lon1_index * lon_pixel_pitch;
   const lon2_index = lon1_index + 1;
-  const lon2 = (lon2_index - 0.5) * lon_pixel_pitch;
+  const lon2 = bounding_box.min_lon + lon2_index * lon_pixel_pitch;
 
   const lat1_index = Math.floor(
     (point.lat - bounding_box.min_lat - lat_pixel_pitch / 2.0) / lat_pixel_pitch);
-  const lat1 = (lat1_index - 0.5) * lat_pixel_pitch;
+  const lat1 = bounding_box.min_lat + lat1_index * lat_pixel_pitch;
   const lat2_index = lat1_index + 1;
-  const lat2 = (lat2_index - 0.5) * lat_pixel_pitch;
+  const lat2 = bounding_box.min_lat + lat2_index * lat_pixel_pitch;
 
   // If the point is out of bounds, return zero speed.
   // TODO(wcraddock:) This introduces a small error at the edge of the map.
@@ -61,6 +61,11 @@ function Bilerp(point, bounding_box, vector_field) {
   if (lon_oob || lat_oob) {
     return {bearing: 0, speed:0};
   }
+
+  console.assert(point.lon >= lon1, 'point is not properly surrounded');
+  console.assert(point.lon <= lon2, 'point is not properly surrounded');
+  console.assert(point.lat >= lat1, 'point is not properly surrounded');
+  console.assert(point.lat <= lat2, 'point is not properly surrounded');
 
   // Extract the data for each surrounding pixel.
   const select_fn = (lon, lat) => {
@@ -92,6 +97,8 @@ function Bilerp(point, bounding_box, vector_field) {
   P.speed = ((lat2 - point.lat) / lat_pixel_pitch) * R1.speed
           + ((point.lat - lat1) / lat_pixel_pitch) * R2.speed;
 
+  console.assert(P.bearing < 360.0, 'angle is impossible');
+
   return P;
 }
 
@@ -116,7 +123,23 @@ function Bilerp(point, bounding_box, vector_field) {
 function LineIntegral(curve, bounding_box, vector_field) {
   let integral = 0.0;
 
-  // Iterate along the curve, including only the penultimate point.
+  let dot_products = [];
+  let motion_headings = [];
+  let motion_magnitudes = [];
+  let wind_bearings = [];
+  let wind_speeds = [];
+
+  // Iterate over a line through the middle of the plot.
+  const step = bounding_box.lon_range / 1000;
+  const middle_lat = (bounding_box.min_lat + bounding_box.max_lat) / 2.0
+  for (let lon = bounding_box.min_lon; lon < bounding_box.max_lon; lon += step) {
+    const point = {lat: middle_lat, lon: lon};
+    const wind_info = Bilerp(point, bounding_box, vector_field);
+    wind_bearings.push(wind_info.bearing);
+    wind_speeds.push(wind_info.speed);
+  }
+
+  // Iterate along the curve, excluding the last point.
   for (let i = 0; i < curve.length - 1; i += 1) {
     // Use the first difference as an approximation to the tangent vector
     // along the curve.
@@ -124,6 +147,9 @@ function LineIntegral(curve, bounding_box, vector_field) {
       lon: curve[i + 1].lon - curve[i].lon,
       lat: curve[i + 1].lat - curve[i].lat
     };
+
+    motion_headings.push((180.0 / Math.PI) * Math.atan2(motion_vector.lon, motion_vector.lat));
+    motion_magnitudes.push(Math.sqrt(motion_vector.lon**2.0 + motion_vector.lat**2.0))
 
     // Interpolate the wind speed and heading at the point.
     const wind_info = Bilerp(curve[i], bounding_box, vector_field);
@@ -142,7 +168,15 @@ function LineIntegral(curve, bounding_box, vector_field) {
 
     // Accumulate the integral.
     integral += dot_product;
+
+    dot_products.push(dot_product);
   }
+
+  console.log('dot_products =', JSON.stringify(dot_products));
+  console.log('motion_headings =', JSON.stringify(motion_headings));
+  console.log('motion_magnitudes =', JSON.stringify(motion_magnitudes));
+  console.log('wind_bearings =', JSON.stringify(wind_bearings));
+  console.log('wind_speeds =', JSON.stringify(wind_speeds));
 
   return integral;
 }

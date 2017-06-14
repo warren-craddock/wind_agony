@@ -101,7 +101,7 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
       index, 'lat', lat, 'lon', lon, 'date_time', date_time);
 
     // TODO(wcraddock): Stop using this CORS hack.
-    const url = `https://cors-anywhere.herokuapp.com/https://api.darksky.net/forecast/${DARK_SKY_API_KEY}/${lat},${lon},${date_time}`;
+    const url = `https://cors-anywhere.herokuapp.com/https://api.darksky.net/forecast/${DARK_SKY_API_KEY}/${lat},${lon},${date_time}?units=us`;
     request
        .get(url)
        .end(function(err, res){
@@ -119,11 +119,16 @@ function GetDarkSkyWindVectorField(date_time, bounding_box, points, callback) {
     // Transform all of the result objects by pulling out the wind bearing
     // and speed fields.
     const wind_data = results.map(result => ({
-      bearing: result.daily.data[0].windBearing,
-      speed: result.daily.data[0].windSpeed
+      bearing: result.currently.windBearing,
+      speed: result.currently.windSpeed,
+      lat: result.latitude,
+      lon: result.longitude,
     }));
     wind_data.width = points;
     wind_data.height = points;
+
+    // Print out the wind data to the console.
+    wind_data.map(wd => console.log(JSON.stringify(wd)));
 
     // Call our callback with the complete dataset.
     callback(wind_data);

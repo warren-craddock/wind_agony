@@ -28,13 +28,13 @@ class WindAgonyScore extends React.Component {
 
     // Describe the score in colorful language.
     let wind_agony_string = "";
-    if (wind_agony_score < -1000) {
+    if (wind_agony_score < -2) {
       wind_agony_string = "You barely had to pedal!";
-    } else if (wind_agony_score < -100) {
+    } else if (wind_agony_score < -1) {
       wind_agony_string = "Nice tailwind";
-    } else if (wind_agony_score < 100) {
-      wind_agony_string = "Virtually no wind";
-    } else if (wind_agony_score < 1000) {
+    } else if (wind_agony_score < 1) {
+      wind_agony_string = "The wind neither hurt nor helped";
+    } else if (wind_agony_score < 2) {
       wind_agony_string = "The headwind wasn't fun";
     } else {
       wind_agony_string = "The headwind was a miserable bastard";
