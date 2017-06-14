@@ -41,17 +41,19 @@ function Bilerp(point, bounding_box, vector_field) {
   const lat_pixel_pitch = bounding_box.lat_range / vector_field.height;
 
   // Find the four pixels of the vector field that surround the given point.
+  const lon_first_pixel_center = bounding_box.min_lon + lon_pixel_pitch / 2.0;
   const lon1_index = Math.floor(
-    (point.lon - bounding_box.min_lon - lon_pixel_pitch / 2.0) / lon_pixel_pitch);
-  const lon1 = bounding_box.min_lon + lon1_index * lon_pixel_pitch;
+    (point.lon - lon_first_pixel_center) / lon_pixel_pitch);
+  const lon1 = bounding_box.min_lon + (lon1_index + 0.5) * lon_pixel_pitch;
   const lon2_index = lon1_index + 1;
-  const lon2 = bounding_box.min_lon + lon2_index * lon_pixel_pitch;
+  const lon2 = bounding_box.min_lon + (lon2_index + 0.5) * lon_pixel_pitch;
 
+  const lat_first_pixel_center = bounding_box.min_lat + lat_pixel_pitch / 2.0;
   const lat1_index = Math.floor(
-    (point.lat - bounding_box.min_lat - lat_pixel_pitch / 2.0) / lat_pixel_pitch);
-  const lat1 = bounding_box.min_lat + lat1_index * lat_pixel_pitch;
+    (point.lat - lat_first_pixel_center) / lat_pixel_pitch);
+  const lat1 = bounding_box.min_lat + (lat1_index + 0.5) * lat_pixel_pitch;
   const lat2_index = lat1_index + 1;
-  const lat2 = bounding_box.min_lat + lat2_index * lat_pixel_pitch;
+  const lat2 = bounding_box.min_lat + (lat2_index + 0.5) * lat_pixel_pitch;
 
   // If the point is out of bounds, return zero speed.
   // TODO(wcraddock:) This introduces a small error at the edge of the map.
@@ -60,6 +62,12 @@ function Bilerp(point, bounding_box, vector_field) {
   const lat_oob = lat1_index < 0 || lat2_index >= vector_field.height;
   if (lon_oob || lat_oob) {
     return {bearing: 0, speed:0};
+  }
+
+  const err = !(point.lon >= lon1) || !(point.lon <= lon2) ||
+              !(point.lat >= lat1) || !(point.lat <= lat2);
+  if (err) {
+    debugger;
   }
 
   console.assert(point.lon >= lon1, 'point is not properly surrounded');
@@ -121,23 +129,8 @@ function Bilerp(point, bounding_box, vector_field) {
 // small. This is usually true for a single day's bike riding, but it would be
 // more correct to compute this on the surface of a 2-sphere.
 function LineIntegral(curve, bounding_box, vector_field) {
-  let integral = 0.0;
-
-  let dot_products = [];
-  let motion_headings = [];
-  let motion_magnitudes = [];
-  let wind_bearings = [];
-  let wind_speeds = [];
-
-  // Iterate over a line through the middle of the plot.
-  const step = bounding_box.lon_range / 1000;
-  const middle_lat = (bounding_box.min_lat + bounding_box.max_lat) / 2.0
-  for (let lon = bounding_box.min_lon; lon < bounding_box.max_lon; lon += step) {
-    const point = {lat: middle_lat, lon: lon};
-    const wind_info = Bilerp(point, bounding_box, vector_field);
-    wind_bearings.push(wind_info.bearing);
-    wind_speeds.push(wind_info.speed);
-  }
+  let positive_integral = 0.0;
+  let negative_integral = 0.0;
 
   // Iterate along the curve, excluding the last point.
   for (let i = 0; i < curve.length - 1; i += 1) {
@@ -147,9 +140,6 @@ function LineIntegral(curve, bounding_box, vector_field) {
       lon: curve[i + 1].lon - curve[i].lon,
       lat: curve[i + 1].lat - curve[i].lat
     };
-
-    motion_headings.push((180.0 / Math.PI) * Math.atan2(motion_vector.lon, motion_vector.lat));
-    motion_magnitudes.push(Math.sqrt(motion_vector.lon**2.0 + motion_vector.lat**2.0))
 
     // Interpolate the wind speed and heading at the point.
     const wind_info = Bilerp(curve[i], bounding_box, vector_field);
@@ -167,18 +157,13 @@ function LineIntegral(curve, bounding_box, vector_field) {
                       + motion_vector.lat * wind_vector.lat;
 
     // Accumulate the integral.
-    integral += dot_product;
-
-    dot_products.push(dot_product);
+    if (dot_product > 0)
+      positive_integral += dot_product;
+    else
+      negative_integral += dot_product;
   }
 
-  console.log('dot_products =', JSON.stringify(dot_products));
-  console.log('motion_headings =', JSON.stringify(motion_headings));
-  console.log('motion_magnitudes =', JSON.stringify(motion_magnitudes));
-  console.log('wind_bearings =', JSON.stringify(wind_bearings));
-  console.log('wind_speeds =', JSON.stringify(wind_speeds));
-
-  return integral;
+  return {positive_integral, negative_integral};
 }
 
 export { Bilerp, LineIntegral };

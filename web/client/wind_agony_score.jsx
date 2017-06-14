@@ -23,28 +23,38 @@ class WindAgonyScore extends React.Component {
     // Compute the line integral of the track through the wind vector field. The
     // line integral is defined to be negative when you're riding along with a
     // tailwind.
-    const wind_agony_score =
-      LineIntegral(curve, this.props.bounding_box, this.props.wind);
+    const scores =
+        LineIntegral(curve, this.props.bounding_box, this.props.wind);
+    const agony_score = scores.positive_integral;
+    const blessing_score = -1.0 * scores.negative_integral;
 
-    // Describe the score in colorful language.
-    let wind_agony_string = "";
-    if (wind_agony_score < -2) {
-      wind_agony_string = "You barely had to pedal!";
-    } else if (wind_agony_score < -1) {
-      wind_agony_string = "Nice tailwind";
-    } else if (wind_agony_score < 1) {
-      wind_agony_string = "The wind neither hurt nor helped";
-    } else if (wind_agony_score < 2) {
-      wind_agony_string = "The headwind wasn't fun";
+    // Describe the scores in colorful language.
+    let description = "";
+    if (blessing_score > 1.0) {
+      description += "Bitchin' tailwinds";
+    } else if (blessing_score > 0.5) {
+      description += "Strong tailwinds";
+    } else if (blessing_score > 0.25) {
+      description += "Some tailwinds";
     } else {
-      wind_agony_string = "The headwind was a miserable bastard";
+      description += "No tailwinds"
+    }
+
+    if (agony_score > 1.0) {
+      description += " and god-awful headwinds";
+    } else if (agony_score > 0.5) {
+      description += " and strong headwinds";
+    } else if (agony_score > 0.25) {
+      description += " and some headwinds";
+    } else {
+      description += " and no headwinds";
     }
 
     return (
       <div>
-        <h1>Wind Agony Score</h1>
-        <h2>{wind_agony_score.toFixed(3)}</h2>
-        <h2>{wind_agony_string}</h2>
+        <h2>Wind Agony Score: {agony_score.toFixed(3)}</h2>
+        <h2>Wind Blessing Score: {blessing_score.toFixed(3)}</h2>
+        <h1>{description}</h1>
       </div>
     );
   }
